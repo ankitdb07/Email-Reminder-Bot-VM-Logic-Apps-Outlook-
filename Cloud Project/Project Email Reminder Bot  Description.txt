@@ -1,0 +1,145 @@
+Project: Email Reminder Bot (VM + Logic Apps + Outlook)
+Goal: Read dynamic reminder content from an Azure VM and send it via email using Logic Apps
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+⚙ STEP 1: Create the Azure Virtual Machine
+Go to Azure Portal
+
+Click Create a resource > Search Virtual Machine
+
+Fill in:
+
+Name: ReminderVM
+
+Image: Ubuntu 20.04 LTS
+
+Size: B1s (free under student subscription)
+
+Authentication: Password
+
+Networking:
+
+Public IP: Enabled
+
+Inbound ports: Allow SSH (22) and Custom port 5000
+
+Click Review + Create, then Create
+
+✅ VM is ready
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+⚙ STEP 2: Set Up Flask App Inside VM
+Open SSH terminal:
+
+From Azure portal > VM > “Connect” > SSH
+
+Run the following setup:
+
+bash
+Copy
+Edit
+sudo apt update
+sudo apt install python3-pip -y
+pip3 install flask
+Create the Flask API:
+
+
+
+bash
+Copy
+Edit
+nano app.py
+Paste this code:
+
+python
+
+
+Copy
+Edit
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+from flask import Flask
+app = Flask(_name_)
+
+@app.route('/reminder')
+def reminder():
+    return """📘 Study: Revise Probability  
+💧 Drink Water  
+📝 Submit Agile Report"""
+
+app.run(host='0.0.0.0', port=5000)
+Run it:
+
+bash
+Copy
+Edit
+python3 app.py
+✅ Now your reminder is available at:
+http://<your-vm-public-ip>:5000/reminder
+
+Make sure port 5000 is open:
+
+Go to VM > Networking > Add inbound port rule
+
+Port: 5000, Protocol: TCP, Allow from Any
+
+⚙ STEP 3: Create Logic App to Send Email
+Go to Azure Portal > Create Resource > Logic App (Consumption)
+
+Name: ReminderLogicApp, Region: Same as VM
+
+After deployment, click Logic App Designer
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+⚙ STEP 4: Build the Logic App Workflow
+Trigger:
+
+Search: Recurrence
+
+Frequency: Day
+
+Interval: 1
+
+Next Step: HTTP Request
+
+Action: HTTP
+
+Method: GET
+
+URI: http://<your-vm-ip>:5000/reminder
+
+Next Step: Send Email
+
+Choose: Outlook 365 (Send an email v2) or SendGrid
+
+Subject: 📬 Daily Reminder
+
+Body: @{body('HTTP')} → This pulls the response from your VM
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
